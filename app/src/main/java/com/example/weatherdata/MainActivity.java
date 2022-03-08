@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     SimpleDateFormat dfDay, dfDate;
 
-    List<Weather> weatherList;
+    List<Weather> weatherList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,8 +54,10 @@ public class MainActivity extends AppCompatActivity {
         txtCity = findViewById(R.id.textViewCity);
         txtWind = findViewById(R.id.textViewWind);
         txtHumidity = findViewById(R.id.textViewHumidity);
+
         edtCity = findViewById(R.id.editTextCity);
         btnsend = findViewById(R.id.buttonSend);
+
         imgWeather = findViewById(R.id.imageViewWeather);
 
         dfDay = new SimpleDateFormat("EEE");
@@ -64,18 +66,23 @@ public class MainActivity extends AppCompatActivity {
         txtDay.setText(dfDay.format(Calendar.getInstance().getTime())+"day");
         txtDate.setText(dfDate.format(Calendar.getInstance().getTime())+"");
 
-
+        btnsend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getWeather(v);
+            }
+        });
 
     }
 
-    public void getweather(View v){
+    public void getWeather(View v){
         Retrofit retrofit=new Retrofit.Builder()
                 .baseUrl("https://api.openweathermap.org/data/2.5/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
-        WeatherAPI myapi = retrofit.create(WeatherAPI.class);
-        Call<Example> examplecall = myapi.getweather(edtCity.getText().toString().trim(),apikey);
-        examplecall.enqueue(new Callback<Example>() {
+        WeatherAPI myApi = retrofit.create(WeatherAPI.class);
+        Call<Example> exampleCall = myApi.getweather(edtCity.getText().toString().trim(),apikey);
+        exampleCall.enqueue(new Callback<Example>() {
             @Override
             public void onResponse(Call<Example> call, Response<Example> response) {
                 if(response.code()==404){
@@ -85,25 +92,21 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this,response.code()+" ",Toast.LENGTH_LONG).show();
                     return;
                 }
-                Example mydata = response.body();
+                Example myData = response.body();
 
                 // Temperature
-                Main main = mydata.getMain();
+                Main main = myData.getMain();
                 Double temp = main.getTemp();
-                Integer temperature = (int) (temp-273.15);
-                txtTemperature.setText(String.valueOf(temperature)+".");
+                Integer temperature = (int) (temp - 273.15);
+                txtTemperature.setText(temperature+".");
                 // City
-                String cityName = mydata.getName();
+                String cityName = myData.getName();
                 txtCity.setText(cityName+"");
-
                 // Humidity
-
                 int humidity = main.getHumidity();
-
-                txtHumidity.setText(String.valueOf(humidity)+"%");
+                txtHumidity.setText(humidity+"%");
                 // Wind
-
-                Wind wind = mydata.getWind();
+                Wind wind = myData.getWind();
                 Double speed = wind.getSpeed();
                 Integer wind_degree = wind.getDeg();
 
@@ -141,29 +144,22 @@ public class MainActivity extends AppCompatActivity {
                 }else {
                     derection = "north-northwest";
                 }
-                txtWind.setText(String.valueOf(speed)+" mph " +String.valueOf(wind_degree) +" - "+ derection );
+                txtWind.setText(speed+" mph " +wind_degree +" - "+ derection );
 
                 //Weather
-                weatherList = new ArrayList<>();
-                weatherList = mydata.getWeather();
-//                Weather weather = (Weather) mydata.getWeather();
+//                weatherList = myData.getWeather();
+                weatherList.addAll(myData.getWeather());
                 String description = weatherList.get(0).getDescription();
-
-                txtWeather.setText(String.valueOf(description)+"");
+                txtWeather.setText(description+"");
 
                 // Weather icon
-
                 String icon = weatherList.get(0).getIcon();
                 String url = "http://openweathermap.org/img/wn/"+icon+"@2x.png";
                 Glide.with(MainActivity.this).load(url).into(imgWeather);
             }
-
             @Override
             public void onFailure(Call<Example> call, Throwable t) {
                 Toast.makeText(MainActivity.this,t.getMessage(),Toast.LENGTH_LONG).show();
             }
         });
-
-
-
     }}
